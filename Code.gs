@@ -1,25 +1,26 @@
-var username = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B2").getValue();
-var password = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B3").getValue();
-var overwrite = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B4").getValue();
+var config_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration");
+var username = config_sheet.getRange("B2").getValue();
+var password = config_sheet.getRange("B3").getValue();
+var overwrite = config_sheet.getRange("B4").getValue();
 
 function update_config() {
-  username = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B2").getValue();
-  password = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B3").getValue();
-  overwrite = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B4").getValue();
+  username = config_sheet.getRange("B2").getValue();
+  password = config_sheet.getRange("B3").getValue();
+  overwrite = config_sheet.getRange("B4").getValue();
 }
 
 function update_running_status() {
-  var is_running = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B8").getValue();
-  SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B17").setValue(is_running);
+  var is_running = config_sheet.getRange("B8").getValue();
+  config_sheet.getRange("B17").setValue(is_running);
   if(is_running) {
     var now = new Date();
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B13").setValue(now.toLocaleString());
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B15").setValue(0);
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B16").setValue(0);
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B18").setValue("? of ?");
+    config_sheet.getRange("B13").setValue(now.toLocaleString());
+    config_sheet.getRange("B15").setValue(0);
+    config_sheet.getRange("B16").setValue(0);
+    config_sheet.getRange("B18").setValue("? of ?");
   } else {
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B13").setValue("");
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B18").setValue("");
+    config_sheet.getRange("B13").setValue("");
+    config_sheet.getRange("B18").setValue("");
   }
 }
 
