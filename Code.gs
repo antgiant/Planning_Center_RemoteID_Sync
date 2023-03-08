@@ -3,10 +3,19 @@ var username = config_sheet.getRange("B2").getValue();
 var password = config_sheet.getRange("B3").getValue();
 var overwrite = config_sheet.getRange("B4").getValue();
 
+function log_this(message) {
+  var log_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Activity Log");
+  var now = new Date();
+  log_sheet.insertRowBefore(2);
+  log_sheet.getRange("A2").setValue(now.toLocaleString());
+  log_sheet.getRange("B2").setValue(message);
+}
+
 function update_config() {
   username = config_sheet.getRange("B2").getValue();
   password = config_sheet.getRange("B3").getValue();
   overwrite = config_sheet.getRange("B4").getValue();
+  log_this("Config Values Updated");
 }
 
 function update_running_status() {
@@ -15,6 +24,7 @@ function update_running_status() {
   if(is_running) {
     var now = new Date();
     config_sheet.getRange("B13").setValue(now.toLocaleString());
+    config_sheet.getRange("B14").setValue("");
     config_sheet.getRange("B15").setValue(0);
     config_sheet.getRange("B16").setValue(0);
     config_sheet.getRange("B18").setValue("? of ?");
@@ -22,6 +32,7 @@ function update_running_status() {
     config_sheet.getRange("B13").setValue("");
     config_sheet.getRange("B18").setValue("");
   }
+  log_this("Running status changed to "+is_running);
 }
 
 function onEdit(e) {
