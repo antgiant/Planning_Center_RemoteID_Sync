@@ -15,7 +15,7 @@ function update_config() {
   username = config_sheet.getRange("B2").getValue();
   password = config_sheet.getRange("B3").getValue();
   overwrite = config_sheet.getRange("B4").getValue();
-  log_this("Config Values Updated");
+  log_this("Config Values Updated (username:"+username.replace(/([a-z0-9])/gi,"*")+", password:"+password.replace(/([a-z0-9])/gi,"*")+", overwrite remote_id:"+overwrite+")");
 }
 
 function update_running_status() {
