@@ -11,6 +11,16 @@ function update_config() {
 function update_running_status() {
   var is_running = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B8").getValue();
   SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B17").setValue(is_running);
+  if(is_running) {
+    var now = new Date();
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B13").setValue(now.toLocaleString());
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B15").setValue(0);
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B16").setValue(0);
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B18").setValue("? of ?");
+  } else {
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B13").setValue("");
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration").getRange("B18").setValue("");
+  }
 }
 
 function onEdit(e) {
