@@ -28,11 +28,12 @@ function update_running_status() {
     config_sheet.getRange("B15").setValue(0);
     config_sheet.getRange("B16").setValue(0);
     config_sheet.getRange("B18").setValue("? of ?");
+    log_this("Running status turned on");
   } else {
     config_sheet.getRange("B13").setValue("");
     config_sheet.getRange("B18").setValue("");
+    log_this("Running status turned off (Total People:"+config_sheet.getRange("B16").getValue()+" ,RemoteIDs Added:"+config_sheet.getRange("B15").getValue()+")");
   }
-  log_this("Running status changed to "+is_running);
 }
 
 function onEdit(e) {
