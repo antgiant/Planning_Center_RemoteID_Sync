@@ -62,7 +62,7 @@ function get_people_to_update() {
       var object = JSON.parse(jsondata.getContentText());
       total = object.meta.total_count
       config_sheet.getRange("B18").setValue(current_position+" of "+total);
-      current_position = load_people_to_data_sheet(object.data);
+      current_position = load_people_to_data_sheet(object.data, current_position);
       config_sheet.getRange("B18").setValue(current_position+" of "+total);
     } else {
       Utilities.sleep(headers["retry-after"]*1000);
@@ -70,7 +70,7 @@ function get_people_to_update() {
   } while (current_position < total)
 }
 
-function load_people_to_data_sheet(data) {
+function load_people_to_data_sheet(data, current_count) {
   var data_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
   var last_row = (data_sheet.getRange("A1:A").getValues()).filter(String).length;
   var row = data_sheet.getRange("A"+(last_row+1)+":AD"+(last_row+data.length));
@@ -110,5 +110,5 @@ function load_people_to_data_sheet(data) {
     ]);
   }
   row.setValues(row_data);
-  return last_row + data.length - 1;
+  return current_count + data.length;
 }
