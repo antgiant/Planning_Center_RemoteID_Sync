@@ -61,13 +61,15 @@ function get_people_to_update() {
     if (typeof headers["retry-after"] === 'undefined') {
       var object = JSON.parse(jsondata.getContentText());
       total = object.meta.total_count
-      config_sheet.getRange("B18").setValue(current_position+" of "+total);
       current_position = load_people_to_data_sheet(object.data, current_position);
       config_sheet.getRange("B18").setValue(current_position+" of "+total);
+      log_this(current_position+" of "+total+" people loaded into Data Sheet")
     } else {
+      log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
       Utilities.sleep(headers["retry-after"]*1000);
     }
   } while (current_position < total)
+  log_this("Completed loading People into Data Sheet");
 }
 
 function load_people_to_data_sheet(data, current_count) {
