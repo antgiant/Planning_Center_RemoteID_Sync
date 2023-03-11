@@ -50,6 +50,7 @@ function onEdit(e) {
 }
 
 function get_people_to_update() {
+  log_this("Starting to load People into Data Sheet");
   var current_position = config_sheet.getRange("B18").getValue().replace(/([^ ]+)(.*)/gi,"$1").replace(/[^0-9]/gi,"").replace(/^$/,0);
   var total = config_sheet.getRange("B18").getValue().replace(/(^[^ ]+) of ([0-9]*)$/gi,"$2").replace(/[^0-9]/gi,"").replace(/^$/,0);
   var login = {headers: {Authorization: "Basic " + Utilities.base64Encode(username + ":" + password)}};
@@ -60,8 +61,14 @@ function get_people_to_update() {
     //If retry-after is set API limits have been reached
     if (typeof headers["retry-after"] === 'undefined') {
       var object = JSON.parse(jsondata.getContentText());
-      total = object.meta.total_count
       current_position = load_people_to_data_sheet(object.data, current_position);
+      if (total > object.meta.total_count) {
+        //Total count has decreased. This means a record was deleted.
+        // Move current position backwards by difference to ensure that no one is missed.
+        
+        current_position = current_position - (total - object.meta.total_count);
+      }
+      total = object.meta.total_count
       config_sheet.getRange("B18").setValue(current_position+" of "+total);
       log_this(current_position+" of "+total+" people loaded into Data Sheet")
     } else {
@@ -69,7 +76,10 @@ function get_people_to_update() {
       Utilities.sleep(headers["retry-after"]*1000);
     }
   } while (current_position < total)
-  log_this("Completed loading People into Data Sheet");
+  log_this("Completed First pass of loading People into Data Sheet");
+
+  //Now do an immediate second pass to catch anyone added to system during this loading process
+  // ****FIX ME*******
 }
 
 function load_people_to_data_sheet(data, current_count) {
@@ -113,4 +123,8 @@ function load_people_to_data_sheet(data, current_count) {
   }
   row.setValues(row_data);
   return current_count + data.length;
+}
+
+function erase_all_data() {
+  SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data").getRange("A2:AD").clearContent();
 }
