@@ -18,21 +18,24 @@ function update_config() {
   log_this("Config Values Updated (username:"+username.replace(/([a-z0-9])/gi,"*")+", password:"+password.replace(/([a-z0-9])/gi,"*")+", overwrite remote_id:"+overwrite+")");
 }
 
-function update_running_status() {
-  var is_running = config_sheet.getRange("B8").getValue();
-  config_sheet.getRange("B17").setValue(is_running);
+function update_running_status(is_running) {
+  config_sheet.getRange("B8").setValue(is_running);
   if(is_running) {
     var now = new Date();
-    config_sheet.getRange("B13").setValue(now.toLocaleString());
-    config_sheet.getRange("B14").setValue("");
-    config_sheet.getRange("B15").setValue(0);
-    config_sheet.getRange("B16").setValue(0);
-    config_sheet.getRange("B18").setValue("? of ?");
+    config_sheet.getRange("B9").setValue(now.toLocaleString());
+    config_sheet.getRange("B10").setValue("");
+    config_sheet.getRange("B11").setValue(0);
+    config_sheet.getRange("B12").setValue(0);
+    config_sheet.getRange("B13").setValue("? of ?");
+    log_this("Info Screen updated");
+    turn_on_sync();
     log_this("Running status turned on");
   } else {
+    config_sheet.getRange("B9").setValue("");
     config_sheet.getRange("B13").setValue("");
-    config_sheet.getRange("B18").setValue("");
-    log_this("Running status turned off (Total People:"+config_sheet.getRange("B16").getValue()+" ,RemoteIDs Added:"+config_sheet.getRange("B15").getValue()+")");
+    log_this("Info Screen updated");
+    turn_off_sync();
+    log_this("Running status turned off (Total People:"+config_sheet.getRange("B12").getValue()+" ,RemoteIDs Added:"+config_sheet.getRange("B11").getValue()+")");
   }
 }
 
@@ -43,16 +46,64 @@ function onEdit(e) {
           || e.range.getA1Notation() == "B4") {
       update_config()
     }
-    if (e.range.getA1Notation() == "B8") {
-      update_running_status()
-    }
   }
+}
+
+function onOpen() {
+  update_config();
+  var ui = SpreadsheetApp.getUi();
+  // Or DocumentApp or FormApp.
+  if (config_sheet.getRange("B8").getValue()) {
+    ui.createMenu('Planning Center Sync')
+        .addItem('Turn off Sync', 'turn_off')
+        .addToUi();
+  } else {
+    ui.createMenu('Planning Center Sync')
+        .addItem('Turn on Sync', 'turn_on')
+        .addToUi();
+  }
+}
+
+function turn_on() {
+  var ui = SpreadsheetApp.getUi();
+  ui.removeMenu('Turn on Sync');
+  ui.createMenu('Planning Center Sync')
+      .addItem('Turn off Sync', 'turn_off')
+      .addToUi();
+
+  update_running_status(true);
+    }
+
+function turn_off() {
+  ui.removeMenu('Turn off Sync');
+  ui.createMenu('Planning Center Sync')
+      .addItem('Turn on Sync', 'turn_on')
+      .addToUi();
+
+  update_running_status(false);
+  }
+
+function turn_on_sync() {
+  ScriptApp.newTrigger("get_people_to_update")
+          .timeBased()
+          .everyMinutes(10)
+          .create();
+  log_this("Turned on repeating process (trigger) that performs initial loading of people.");
+}
+
+function turn_off_sync() {
+  // clear any existing triggers
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+  }
+  log_this("Turned off repeating process (trigger) that performs initial loading of people.");
 }
 
 function get_people_to_update() {
   log_this("Starting to load People into Data Sheet");
-  var current_position = config_sheet.getRange("B18").getValue().replace(/([^ ]+)(.*)/gi,"$1").replace(/[^0-9]/gi,"").replace(/^$/,0);
-  var total = config_sheet.getRange("B18").getValue().replace(/(^[^ ]+) of ([0-9]*)$/gi,"$2").replace(/[^0-9]/gi,"").replace(/^$/,0);
+  var current_position = config_sheet.getRange("B13").getValue().replace(/([^ ]+)(.*)/gi,"$1").replace(/[^0-9]/gi,"").replace(/^$/,0);
+  var total = config_sheet.getRange("B13").getValue().replace(/(^[^ ]+) of ([0-9]*)$/gi,"$2").replace(/[^0-9]/gi,"").replace(/^$/,0);
   var login = {headers: {Authorization: "Basic " + Utilities.base64Encode(username + ":" + password)}};
   do {
     var jsondata = UrlFetchApp.fetch("https://api.planningcenteronline.com/people/v2/people?per_page=100&offset="+current_position, login);
@@ -69,7 +120,7 @@ function get_people_to_update() {
         current_position = current_position - (total - object.meta.total_count);
       }
       total = object.meta.total_count
-      config_sheet.getRange("B18").setValue(current_position+" of "+total);
+      config_sheet.getRange("B13").setValue(current_position+" of "+total);
       log_this(current_position+" of "+total+" people loaded into Data Sheet")
     } else {
       log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
