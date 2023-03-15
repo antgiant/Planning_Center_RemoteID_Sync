@@ -52,35 +52,28 @@ function onEdit(e) {
 function onOpen() {
   update_config();
   var ui = SpreadsheetApp.getUi();
-  // Or DocumentApp or FormApp.
-  if (config_sheet.getRange("B8").getValue()) {
+
     ui.createMenu('Planning Center Sync')
-        .addItem('Turn off Sync', 'turn_off')
+      .addItem('Toggle Sync (On/Off)', 'toggle')
         .addToUi();
-  } else {
-    ui.createMenu('Planning Center Sync')
-        .addItem('Turn on Sync', 'turn_on')
-        .addToUi();
-  }
 }
 
-function turn_on() {
+function toggle() {
   var ui = SpreadsheetApp.getUi();
-  ui.removeMenu('Turn on Sync');
-  ui.createMenu('Planning Center Sync')
-      .addItem('Turn off Sync', 'turn_off')
-      .addToUi();
-
-  update_running_status(true);
+  if (!config_sheet.getRange("B8").getValue()) {
+    if (config_sheet.getRange("B2").getValue().toString().length == 64
+      && config_sheet.getRange("B3").getValue().toString().length == 64) {
+        log_this("Turning on Sync");
+        update_running_status(true);
+        SpreadsheetApp.getActive().toast('Sync turned on');
+      } else {
+        log_this("No/Bad Application ID and/or Secret (aka Username and/or password)");
+        ui.alert('Please Enter Application ID & Secret to Turn on Sync');
     }
-
-function turn_off() {
-  ui.removeMenu('Turn off Sync');
-  ui.createMenu('Planning Center Sync')
-      .addItem('Turn on Sync', 'turn_on')
-      .addToUi();
-
-  update_running_status(false);
+  } else {
+    update_running_status(false);
+    SpreadsheetApp.getActive().toast('Sync turned off');
+  }
   }
 
 function turn_on_sync() {
