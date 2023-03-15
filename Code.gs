@@ -111,6 +111,10 @@ function get_people_to_update() {
         // Move current position backwards by difference to ensure that no one is missed.
         
         current_position = current_position - (total - object.meta.total_count);
+        if (current_position < 0) {
+          //This is unlikely but possible in certian circumstances.
+          current_position = 0;
+        }
       }
       total = object.meta.total_count
       config_sheet.getRange("B13").setValue(current_position+" of "+total);
