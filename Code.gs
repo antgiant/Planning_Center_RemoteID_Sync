@@ -2,6 +2,7 @@ var config_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configu
 var username = config_sheet.getRange("B2").getValue();
 var password = config_sheet.getRange("B3").getValue();
 var overwrite = config_sheet.getRange("B4").getValue();
+Logger.log("Script Loaded and Config Values Set");
 
 function log_this(message) {
   var log_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Activity Log");
@@ -9,9 +10,11 @@ function log_this(message) {
   log_sheet.insertRowBefore(2);
   log_sheet.getRange("A2").setValue(now.toLocaleString());
   log_sheet.getRange("B2").setValue(message);
+  Logger.log(message);
 }
 
 function update_config() {
+  Logger.log("Updating Config");
   username = config_sheet.getRange("B2").getValue();
   password = config_sheet.getRange("B3").getValue();
   overwrite = config_sheet.getRange("B4").getValue();
@@ -19,6 +22,7 @@ function update_config() {
 }
 
 function update_running_status(is_running) {
+  Logger.log("Starting update_running_status as "+is_running);
   config_sheet.getRange("B8").setValue(is_running);
   if(is_running) {
     var now = new Date();
@@ -44,21 +48,25 @@ function onEdit(e) {
     if (e.range.getA1Notation() == "B2"
           || e.range.getA1Notation() == "B3"
           || e.range.getA1Notation() == "B4") {
+      Logger.log("Updating Config due to edit of config values");
       update_config()
     }
   }
 }
 
 function onOpen() {
+  Logger.log("Spreadsheet opened");
   update_config();
   var ui = SpreadsheetApp.getUi();
 
     ui.createMenu('Planning Center Sync')
       .addItem('Toggle Sync (On/Off)', 'toggle')
         .addToUi();
+  Logger.log("Menu item added");
 }
 
 function toggle() {
+  Logger.log("Toggling Running status");
   var ui = SpreadsheetApp.getUi();
   if (!config_sheet.getRange("B8").getValue()) {
     if (config_sheet.getRange("B2").getValue().toString().length == 64
@@ -74,9 +82,11 @@ function toggle() {
     update_running_status(false);
     SpreadsheetApp.getActive().toast('Sync turned off');
   }
+  Logger.log("Running status toggle complete");
   }
 
 function turn_on_sync() {
+  Logger.log("Turning on repeating trigger");
   ScriptApp.newTrigger("get_people_to_update")
           .timeBased()
           .everyMinutes(10)
@@ -85,6 +95,7 @@ function turn_on_sync() {
 }
 
 function turn_off_sync() {
+  Logger.log("Clearing all repeating triggers");
   // clear any existing triggers
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
@@ -99,14 +110,19 @@ function get_people_to_update() {
   var total = config_sheet.getRange("B13").getValue().replace(/(^[^ ]+) of ([0-9]*)$/gi,"$2").replace(/[^0-9]/gi,"").replace(/^$/,0);
   var login = {headers: {Authorization: "Basic " + Utilities.base64Encode(username + ":" + password)}};
   do {
+    Logger.log("Attempting to load people at offset of "+current_position);
     var jsondata = UrlFetchApp.fetch("https://api.planningcenteronline.com/people/v2/people?per_page=100&offset="+current_position, login);
     var headers = jsondata.getAllHeaders();
 
     //If retry-after is set API limits have been reached
     if (typeof headers["retry-after"] === 'undefined') {
+      Logger.log("No API delay requested by Planning Center loading data from JSON");
       var object = JSON.parse(jsondata.getContentText());
+      Logger.log("Loading People into Data sheet");
       current_position = load_people_to_data_sheet(object.data, current_position);
+      Logger.log(object.data.length+" People loaded into Data sheet");
       if (total > object.meta.total_count) {
+        Logger.log("Total Count decreased. (Record was deleted from Planning Center mid-load.)");
         //Total count has decreased. This means a record was deleted.
         // Move current position backwards by difference to ensure that no one is missed.
         
