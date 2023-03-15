@@ -27,7 +27,7 @@ function update_running_status(is_running) {
   if(is_running) {
     var now = new Date();
     config_sheet.getRange("B9").setValue(now.toLocaleString());
-    config_sheet.getRange("B10").setValue("");
+    config_sheet.getRange("B10").setValue(now.toLocaleString());
     config_sheet.getRange("B11").setValue(0);
     config_sheet.getRange("B12").setValue(0);
     config_sheet.getRange("B13").setValue("? of ?");
@@ -35,6 +35,12 @@ function update_running_status(is_running) {
     turn_on_sync();
     log_this("Running status turned on");
   } else {
+    if (config_sheet.getRange("B9").getValue() == config_sheet.getRange("B10").getValue()) {
+      //This means that initial load had not completed. So, a full reset is required.
+      Logger.log("Resetting everything since initial load has not yet completed.")
+      config_sheet.getRange("B10").setValue("");
+      erase_all_data();
+    }
     config_sheet.getRange("B9").setValue("");
     config_sheet.getRange("B13").setValue("");
     log_this("Info Screen updated");
@@ -191,4 +197,5 @@ function load_people_to_data_sheet(data, current_count) {
 
 function erase_all_data() {
   SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data").getRange("A2:AD").clearContent();
+  Logger.log("All data in Data sheet cleared");
 }
