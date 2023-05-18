@@ -123,8 +123,8 @@ function get_people_to_update() {
   }
   var login = {headers: {Authorization: "Basic " + Utilities.base64Encode(username + ":" + password)}};
   do {
-    Logger.log("Calling https://api.planningcenteronline.com/people/v2/people?per_page=100&offset="+current_position+created_since);
-    var jsondata = UrlFetchApp.fetch("https://api.planningcenteronline.com/people/v2/people?per_page=100&offset="+current_position+created_since, login);
+          Logger.log("Calling https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins");
+          var jsondata = UrlFetchApp.fetch("https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins", login);
     var headers = jsondata.getAllHeaders();
 
     //If retry-after is set API limits have been reached
