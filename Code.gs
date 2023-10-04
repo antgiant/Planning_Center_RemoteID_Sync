@@ -108,7 +108,6 @@
       }
       
       function get_people_to_update() {
-        log_this("Starting to load People into Data Sheet");
         var created_total = config_sheet.getRange(config.total_created).getValue().toString().replace(/[^0-9]/gi,"").replace(/^$/,0);
 
         var login = {
@@ -127,10 +126,10 @@
             Logger.log("No API delay requested by Planning Center loading data from JSON");
             var object = JSON.parse(jsondata.getContentText());
 
-            Logger.log("Processing Batch of "+object.data.length+" people.");
+            log_this("Processing Batch of "+object.data.length+" people with "+object.meta.total_count+" people remaining.");
             created_total = process_people(object.data, created_total);
             config_sheet.getRange(config.total_created).setValue(created_total);
-            Logger.log("Batch Complete");
+            log_this("Batch Complete")
 
             //Save total to user visible location
             config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
