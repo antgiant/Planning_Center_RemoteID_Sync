@@ -147,7 +147,7 @@
           }
         } while (object.meta.total_count > 0)
         //When complete turn off triggers
-        turn_off_sync();
+        update_running_status(false);
       }
       
       function update_people(data, current_count) {
