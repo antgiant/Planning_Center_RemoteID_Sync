@@ -105,7 +105,7 @@
       }
       
       function get_people_to_update() {
-        var created_total = config_sheet.getRange(config.total_created).getValue().toString().replace(/[^0-9]/gi,"").replace(/^$/,0);
+        var created_total = Number(config_sheet.getRange(config.total_created).getValue().toString().replace(/[^0-9]/gi,"").replace(/^$/,0));
 
         var login = {
           headers: {
