@@ -31,13 +31,12 @@
       function update_running_status(is_running) {
         Logger.log("Starting update_running_status as "+is_running);
         config_sheet.getRange(config.is_running).setValue(is_running);
-        config_sheet.getRange(config.left_to_create).setValue("?");
         log_this("Info Screen updated");
         if(is_running) {
           turn_on_sync();
           log_this("Running status turned on");
         } else {
-          config_sheet.getRange(config.left_to_create).setValue("?");
+          config_sheet.getRange(config.left_to_create).setValue("¿"+config_sheet.getRange(config.left_to_create).getValue().toString()+"?");
           turn_off_sync();
           log_this("Running status turned off");
         }
