@@ -3,7 +3,7 @@
         username: "B2",
         password: "B3",
         is_running: "B6",
-        started_time: "B7",
+        last_check_time: "B7",
         total_created: "B8",
         left_to_create: "B9"
       }
@@ -31,17 +31,13 @@
       function update_running_status(is_running) {
         Logger.log("Starting update_running_status as "+is_running);
         config_sheet.getRange(config.is_running).setValue(is_running);
+        config_sheet.getRange(config.left_to_create).setValue("?");
+        log_this("Info Screen updated");
         if(is_running) {
-          var now = new Date();
-          config_sheet.getRange(config.started_time).setValue(now.toLocaleString());
-          config_sheet.getRange(config.left_to_create).setValue("?");
-          log_this("Info Screen updated");
-    turn_on_sync();
+          turn_on_sync();
           log_this("Running status turned on");
         } else {
-          config_sheet.getRange(config.started_time).setValue("N/A");
           config_sheet.getRange(config.left_to_create).setValue("?");
-          log_this("Info Screen updated");
           turn_off_sync();
           log_this("Running status turned off");
         }
@@ -89,12 +85,12 @@
       }
       
       function turn_on_sync() {
-        Logger.log("Turning on repeating trigger");
-        ScriptApp.newTrigger("get_people_to_update")
-                .timeBased()
-                .everyMinutes(10)
-                .create();
-        log_this("Turned on repeating process (trigger) that performs initial loading of people.");
+        // Logger.log("Turning on repeating trigger");
+        // ScriptApp.newTrigger("get_people_to_update")
+        //         .timeBased()
+        //         .everyMinutes(10)
+        //         .create();
+        // log_this("Turned on repeating process (trigger) that performs initial loading of people.");
       }
       
       function turn_off_sync() {
@@ -117,8 +113,10 @@
           }
         };
         do {
-          Logger.log("Calling https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins");
-          var jsondata = UrlFetchApp.fetch("https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins", login);
+          var now = new Date();
+          var temp_url = "https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins"
+          Logger.log("Calling " + temp_url);
+          var jsondata = UrlFetchApp.fetch(temp_url, login);
           var headers = jsondata.getAllHeaders();
       
           //If retry-after is set API limits have been reached
@@ -127,12 +125,12 @@
             var object = JSON.parse(jsondata.getContentText());
 
             log_this("Processing Batch of "+object.data.length+" people with "+object.meta.total_count+" people remaining.");
+            config_sheet.getRange(config.last_check_time).setValue(now.toLocaleString());
+            config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count);
             created_total = process_people(object.data, created_total);
             config_sheet.getRange(config.total_created).setValue(created_total);
-            log_this("Batch Complete")
-
-            //Save total to user visible location
             config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
+            log_this("Batch Complete")
           } else {
             log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
             Utilities.sleep(headers["retry-after"]*1000);
