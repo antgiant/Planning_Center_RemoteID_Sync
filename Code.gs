@@ -66,21 +66,21 @@
       
       function toggle() {
         Logger.log("Toggling Running status");
-        var ui = SpreadsheetApp.getUi();
         if (!config_sheet.getRange(config.is_running).getValue()) {
           if (config_sheet.getRange(config.username).getValue().toString().length == 64
             && config_sheet.getRange(config.password).getValue().toString().length == 64) {
               log_this("Turning on Sync");
               update_running_status(true);
-              SpreadsheetApp.getActive().toast('Sync turned on');
+              SpreadsheetApp.getActive().toast('One Time Sync turned on');
               get_people_to_update();
             } else {
+              var ui = SpreadsheetApp.getUi();
               log_this("No/Bad Application ID and/or Secret (aka Username and/or password)");
               ui.alert('Please Enter Application ID & Secret to Turn on Sync');
             }
         } else {
           update_running_status(false);
-          SpreadsheetApp.getActive().toast('Sync turned off');
+          SpreadsheetApp.getActive().toast('One Time Sync turned off');
         }
         Logger.log("Running status toggle complete");
       }
@@ -91,7 +91,7 @@
                 .timeBased()
                 .everyMinutes(10)
                 .create();
-        log_this("Turned on repeating process (trigger) that performs initial loading of people.");
+        log_this("Turned on repeating process (trigger) that performs one time loading of people.");
       }
       
       function turn_off_sync() {
@@ -101,7 +101,7 @@
         for (var i = 0; i < triggers.length; i++) {
           ScriptApp.deleteTrigger(triggers[i]);
         }
-        log_this("Turned off repeating process (trigger) that performs initial loading of people.");
+        log_this("Turned off repeating process (trigger) that performs one time loading of people.");
       }
       
       function get_people_to_update() {
