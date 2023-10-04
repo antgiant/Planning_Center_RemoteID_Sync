@@ -111,7 +111,8 @@
           headers: {
             Authorization: "Basic " + Utilities.base64Encode(username + ":" + password),
             "X-PCO-API-Version": config.api_version
-          }
+          },
+          'muteHttpExceptions': true
         };
         do {
           var now = new Date();
@@ -120,9 +121,10 @@
           try {
             var jsondata = UrlFetchApp.fetch(temp_url, login);
             var headers = jsondata.getAllHeaders();
+            var responseCode = jsondata.getResponseCode();
         
-            //If retry-after is set API limits have been reached
-            if (typeof headers["retry-after"] === 'undefined') {
+            //If Retry-After is set API limits have been reached
+            if (typeof headers["Retry-After"] === 'undefined') {
               Logger.log("No API delay requested by Planning Center loading data from JSON");
               var object = JSON.parse(jsondata.getContentText());
 
@@ -134,8 +136,12 @@
               config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
               log_this("Batch Complete")
             } else {
-              log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
-              Utilities.sleep(headers["retry-after"]*1000);
+              log_this("Planning Center API Limit reached. Delaying for "+headers["Retry-After"]+" seconds as requested by Planning Center API.");
+              Utilities.sleep(headers["Retry-After"]*1000);
+            }
+            if (responseCode != 200 && responseCode != 429) {
+              var responseBody = response.getContentText();
+              log_this(Utilities.formatString("Request failed. Expected 200, got %d: %s", responseCode, responseBody))
             }
           } catch (e) {
             log_this(e.toString());
@@ -164,7 +170,8 @@
                       },
             'contentType': 'application/json',
             // Convert the JavaScript object to a JSON string.
-            'payload' : JSON.stringify(payload)
+            'payload' : JSON.stringify(payload),
+            'muteHttpExceptions': true
           };
           
           try {
@@ -172,14 +179,17 @@
             var headers = jsondata.getAllHeaders();
             var responseCode = jsondata.getResponseCode();
         
-            //If retry-after is set API limits have been reached
-            if (typeof headers["retry-after"] !== 'undefined') {
-              log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
-              Utilities.sleep(headers["retry-after"]*1000);
+            //If Retry-After is set API limits have been reached
+            if (typeof headers["Retry-After"] !== 'undefined') {
+              log_this("Planning Center API Limit reached. Delaying for "+headers["Retry-After"]+" seconds as requested by Planning Center API.");
+              Utilities.sleep(headers["Retry-After"]*1000);
               i--;
             }
             if (responseCode == 200) {
               Logger.log("Sucessfully updated "+data[i].attributes.name+" with Remote ID of ("+data[i].id+")");
+            } else if (responseCode != 429) {
+              var responseBody = response.getContentText();
+              log_this(Utilities.formatString("Request failed. Expected 200, got %d: %s", responseCode, responseBody))
             }
           } catch (e) {
             log_this(e.toString());
