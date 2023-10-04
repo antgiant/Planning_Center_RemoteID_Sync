@@ -59,7 +59,7 @@
         var ui = SpreadsheetApp.getUi();
       
         ui.createMenu('Planning Center Sync')
-            .addItem('Toggle Sync (On/Off)', 'toggle')
+            .addItem('Toggle One Time Sync (On/Off)', 'toggle')
             .addToUi();
         Logger.log("Menu item added");
       }
@@ -85,12 +85,12 @@
       }
       
       function turn_on_sync() {
-        // Logger.log("Turning on repeating trigger");
-        // ScriptApp.newTrigger("get_people_to_update")
-        //         .timeBased()
-        //         .everyMinutes(10)
-        //         .create();
-        // log_this("Turned on repeating process (trigger) that performs initial loading of people.");
+        Logger.log("Turning on repeating trigger");
+        ScriptApp.newTrigger("get_people_to_update")
+                .timeBased()
+                .everyMinutes(10)
+                .create();
+        log_this("Turned on repeating process (trigger) that performs initial loading of people.");
       }
       
       function turn_off_sync() {
@@ -127,7 +127,7 @@
             log_this("Processing Batch of "+object.data.length+" people with "+object.meta.total_count+" people remaining.");
             config_sheet.getRange(config.last_check_time).setValue(now.toLocaleString());
             config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count);
-            created_total = process_people(object.data, created_total);
+            created_total = update_people(object.data, created_total);
             config_sheet.getRange(config.total_created).setValue(created_total);
             config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
             log_this("Batch Complete")
@@ -135,10 +135,12 @@
             log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
             Utilities.sleep(headers["retry-after"]*1000);
           }
-        } while (object.meta.total_count > 0)       
+        } while (object.meta.total_count > 0)
+        //When complete turn off triggers
+        turn_off_sync();
       }
       
-      function process_people(data, current_count) {
+      function update_people(data, current_count) {
         for (i = 0; i < data.length; i++) {
           var payload = {
             "data": {
