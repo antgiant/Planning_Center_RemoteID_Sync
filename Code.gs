@@ -1,4 +1,5 @@
       var config = {
+        api_version: "2023-02-15",
         username: "B2",
         password: "B3",
         is_running: "B6",
@@ -110,7 +111,12 @@
         log_this("Starting to load People into Data Sheet");
         var created_total = config_sheet.getRange(config.total_created).getValue().toString().replace(/[^0-9]/gi,"").replace(/^$/,0);
 
-        var login = {headers: {Authorization: "Basic " + Utilities.base64Encode(username + ":" + password)}};
+        var login = {
+          headers: {
+            Authorization: "Basic " + Utilities.base64Encode(username + ":" + password),
+            "X-PCO-API-Version": config.api_version
+          }
+        };
         do {
           Logger.log("Calling https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins");
           var jsondata = UrlFetchApp.fetch("https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins", login);
