@@ -140,38 +140,39 @@
       
       function process_people(data, current_count) {
         for (i = 0; i < data.length; i++) {
-          temp = [
-            data[i].id,
-            data[i].attributes.name,
-            data[i].attributes.given_name,
-            data[i].attributes.first_name,
-            data[i].attributes.nickname,
-            data[i].attributes.middle_name,
-            data[i].attributes.last_name,
-            data[i].attributes.avatar,
-            data[i].attributes.birthdate,
-            data[i].attributes.anniversary,
-            data[i].attributes.gender,
-            data[i].attributes.demographic_avatar_url,
-            data[i].attributes.grade,
-            data[i].attributes.school_type,
-            data[i].attributes.graduation_year,
-            data[i].attributes.medical_notes,
-            data[i].attributes.child,
-            data[i].attributes.status,
-            data[i].attributes.membership,
-            data[i].attributes.inactivated_at,
-            data[i].attributes.passed_background_check,
-            data[i].attributes.created_at,
-            data[i].attributes.updated_at,
-            data[i].attributes.directory_status,
-            data[i].attributes.people_permissions,
-            data[i].attributes.can_create_forms,
-            data[i].attributes.accounting_administrator,
-            data[i].attributes.site_administrator,
-            data[i].attributes.remote_id,
-            data[i].links.self
-          ];
+          var payload = {
+            "data": {
+              "type": data[i].type,
+              "id": data[i].id,
+              "attributes": {
+                'remote_id': data[i].id
+              }
+            }
+          }
+          var options = {
+            'method' : 'patch',
+            'headers': {
+                        Authorization: "Basic " + Utilities.base64Encode(username + ":" + password),
+                        "X-PCO-API-Version": config.api_version
+                      },
+            'contentType': 'application/json',
+            // Convert the JavaScript object to a JSON string.
+            'payload' : JSON.stringify(payload)
+          };
+          
+          var jsondata = UrlFetchApp.fetch(data[i].links.self, options);
+          var headers = jsondata.getAllHeaders();
+          var responseCode = jsondata.getResponseCode();
+      
+          //If retry-after is set API limits have been reached
+          if (typeof headers["retry-after"] !== 'undefined') {
+            log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
+            Utilities.sleep(headers["retry-after"]*1000);
+            i--;
+          }
+          if (responseCode == 200) {
+            Logger.log("Sucessfully updated "+data[i].attributes.name+" with Remote ID of ("+data[i].id+")");
+          }
         }
         return current_count + data.length;
       }
