@@ -1,6 +1,14 @@
+      var config = {
+        username: "B2",
+        password: "B3",
+        is_running: "B6",
+        started_time: "B7",
+        total_created: "B8",
+        left_to_create: "B9"
+      }
       var config_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration");
-      var username = config_sheet.getRange("B2").getValue();
-      var password = config_sheet.getRange("B3").getValue();
+      var username = config_sheet.getRange(config.username).getValue();
+      var password = config_sheet.getRange(config.password).getValue();
       Logger.log("Script Loaded and Config Values Set");
       
       function log_this(message) {
@@ -14,26 +22,24 @@
       
       function update_config() {
         Logger.log("Updating Config");
-        username = config_sheet.getRange("B2").getValue();
-        password = config_sheet.getRange("B3").getValue();
+        username = config_sheet.getRange(config.username).getValue();
+        password = config_sheet.getRange(config.password).getValue();
         log_this("Config Values Updated (username:"+username.replace(/([a-z0-9])/gi,"*")+", password:"+password.replace(/([a-z0-9])/gi,"*")+")");
       }
       
       function update_running_status(is_running) {
         Logger.log("Starting update_running_status as "+is_running);
-        config_sheet.getRange("B8").setValue(is_running);
+        config_sheet.getRange(config.is_running).setValue(is_running);
         if(is_running) {
-          config_sheet.getRange("B7").setValue("TRUE");
           var now = new Date();
-          config_sheet.getRange("B8").setValue(now.toLocaleString());
-          config_sheet.getRange("B10").setValue("?");
+          config_sheet.getRange(config.started_time).setValue(now.toLocaleString());
+          config_sheet.getRange(config.left_to_create).setValue("?");
           log_this("Info Screen updated");
     turn_on_sync();
           log_this("Running status turned on");
         } else {
-          config_sheet.getRange("B7").setValue("FALSE");
-          config_sheet.getRange("B8").setValue("N/A");
-          config_sheet.getRange("B10").setValue("?");
+          config_sheet.getRange(config.started_time).setValue("N/A");
+          config_sheet.getRange(config.left_to_create).setValue("?");
           log_this("Info Screen updated");
           turn_off_sync();
           log_this("Running status turned off");
@@ -42,8 +48,8 @@
       
       function onEdit(e) {
         if (e.range.getSheet().getName() == "Configuration") {
-          if (e.range.getA1Notation() == "B2"
-                || e.range.getA1Notation() == "B3") {
+          if (e.range.getA1Notation() == config.username
+                || e.range.getA1Notation() == config.password) {
             Logger.log("Updating Config due to edit of config values");
             update_config()
           }
@@ -64,9 +70,9 @@
       function toggle() {
         Logger.log("Toggling Running status");
         var ui = SpreadsheetApp.getUi();
-        if (!config_sheet.getRange("B8").getValue()) {
-          if (config_sheet.getRange("B2").getValue().toString().length == 64
-            && config_sheet.getRange("B3").getValue().toString().length == 64) {
+        if (!config_sheet.getRange(config.is_running).getValue()) {
+          if (config_sheet.getRange(config.username).getValue().toString().length == 64
+            && config_sheet.getRange(config.password).getValue().toString().length == 64) {
               log_this("Turning on Sync");
               update_running_status(true);
               SpreadsheetApp.getActive().toast('Sync turned on');
@@ -102,8 +108,8 @@
       
       function get_people_to_update() {
         log_this("Starting to load People into Data Sheet");
-        var created_total = config_sheet.getRange("B9").getValue().toString().replace(/[^0-9]/gi,"").replace(/^$/,0);
-      
+        var created_total = config_sheet.getRange(config.total_created).getValue().toString().replace(/[^0-9]/gi,"").replace(/^$/,0);
+
         var login = {headers: {Authorization: "Basic " + Utilities.base64Encode(username + ":" + password)}};
         do {
           Logger.log("Calling https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins");
@@ -117,11 +123,11 @@
 
             Logger.log("Processing Batch of "+object.data.length+" people.");
             created_total = process_people(object.data, created_total);
-            config_sheet.getRange("B9").setValue(created_total);
+            config_sheet.getRange(config.total_created).setValue(created_total);
             Logger.log("Batch Complete");
 
             //Save total to user visible location
-            config_sheet.getRange("B10").setValue(object.meta.total_count);
+            config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
           } else {
             log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
             Utilities.sleep(headers["retry-after"]*1000);
