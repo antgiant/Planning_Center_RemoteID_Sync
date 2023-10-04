@@ -73,6 +73,7 @@
               log_this("Turning on Sync");
               update_running_status(true);
               SpreadsheetApp.getActive().toast('Sync turned on');
+              get_people_to_update();
             } else {
               log_this("No/Bad Application ID and/or Secret (aka Username and/or password)");
               ui.alert('Please Enter Application ID & Secret to Turn on Sync');
@@ -116,24 +117,28 @@
           var now = new Date();
           var temp_url = "https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins"
           Logger.log("Calling " + temp_url);
-          var jsondata = UrlFetchApp.fetch(temp_url, login);
-          var headers = jsondata.getAllHeaders();
-      
-          //If retry-after is set API limits have been reached
-          if (typeof headers["retry-after"] === 'undefined') {
-            Logger.log("No API delay requested by Planning Center loading data from JSON");
-            var object = JSON.parse(jsondata.getContentText());
+          try {
+            var jsondata = UrlFetchApp.fetch(temp_url, login);
+            var headers = jsondata.getAllHeaders();
+        
+            //If retry-after is set API limits have been reached
+            if (typeof headers["retry-after"] === 'undefined') {
+              Logger.log("No API delay requested by Planning Center loading data from JSON");
+              var object = JSON.parse(jsondata.getContentText());
 
-            log_this("Processing Batch of "+object.data.length+" people with "+object.meta.total_count+" people remaining.");
-            config_sheet.getRange(config.last_check_time).setValue(now.toLocaleString());
-            config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count);
-            created_total = update_people(object.data, created_total);
-            config_sheet.getRange(config.total_created).setValue(created_total);
-            config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
-            log_this("Batch Complete")
-          } else {
-            log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
-            Utilities.sleep(headers["retry-after"]*1000);
+              log_this("Processing Batch of "+object.data.length+" people with "+object.meta.total_count+" people remaining.");
+              config_sheet.getRange(config.last_check_time).setValue(now.toLocaleString());
+              config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count);
+              created_total = update_people(object.data, created_total);
+              config_sheet.getRange(config.total_created).setValue(created_total);
+              config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
+              log_this("Batch Complete")
+            } else {
+              log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
+              Utilities.sleep(headers["retry-after"]*1000);
+            }
+          } catch (e) {
+            log_this(e.toString());
           }
         } while (object.meta.total_count > 0)
         //When complete turn off triggers
@@ -162,18 +167,22 @@
             'payload' : JSON.stringify(payload)
           };
           
-          var jsondata = UrlFetchApp.fetch(data[i].links.self, options);
-          var headers = jsondata.getAllHeaders();
-          var responseCode = jsondata.getResponseCode();
-      
-          //If retry-after is set API limits have been reached
-          if (typeof headers["retry-after"] !== 'undefined') {
-            log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
-            Utilities.sleep(headers["retry-after"]*1000);
-            i--;
-          }
-          if (responseCode == 200) {
-            Logger.log("Sucessfully updated "+data[i].attributes.name+" with Remote ID of ("+data[i].id+")");
+          try {
+            var jsondata = UrlFetchApp.fetch(data[i].links.self, options);
+            var headers = jsondata.getAllHeaders();
+            var responseCode = jsondata.getResponseCode();
+        
+            //If retry-after is set API limits have been reached
+            if (typeof headers["retry-after"] !== 'undefined') {
+              log_this("Planning Center API Limit reached. Delaying for "+headers["retry-after"]+" seconds as requested by Planning Center API.");
+              Utilities.sleep(headers["retry-after"]*1000);
+              i--;
+            }
+            if (responseCode == 200) {
+              Logger.log("Sucessfully updated "+data[i].attributes.name+" with Remote ID of ("+data[i].id+")");
+            }
+          } catch (e) {
+            log_this(e.toString());
           }
         }
         return current_count + data.length;
