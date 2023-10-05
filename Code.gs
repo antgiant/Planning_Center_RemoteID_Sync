@@ -255,3 +255,8 @@ function update_people(data, current_count) {
   }
   return current_count + data.length;
 }
+
+function doPost(e) {
+  log_this("Planning Center Webhook Called.");
+  get_people_to_update();
+}
