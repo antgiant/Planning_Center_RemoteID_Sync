@@ -66,6 +66,8 @@ function onOpen() {
 
   ui.createMenu('Planning Center Sync')
       .addItem('Toggle One Time Sync (On/Off)', 'toggle')
+      .addItem('Turn On Once a Day Sync', 'daily_sync_on')
+      .addItem('Turn Off Once a Day Sync', 'daily_sync_off')
       .addToUi();
   Logger.log("Menu item added");
 }
@@ -116,17 +118,48 @@ function turn_on_sync() {
   log_this("Turned on repeating process (trigger) that performs one time loading of people.");
 }
 
+function daily_sync_on() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    //Only add one of these
+    if (triggers[i].getHandlerFunction() == "do_daily_sync"){
+      return;
+    }
+  }
+  Logger.log("Turning on Daily Sync");
+  ScriptApp.newTrigger("do_daily_sync")
+          .timeBased()
+          .everyDays(1)
+          .create();
+  log_this("Daily Sync Turned On.");
+}
+
+function do_daily_sync() {
+  get_people_to_update();
+}
+
 function turn_off_sync() {
   Logger.log("Clearing all repeating triggers");
   // clear any existing triggers
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
-    //Don't delete the installedOnEdit tritter
-    if (triggers[i].getHandlerFunction() != "installedOnEdit" || triggers[i].getEventType() != "ON_EDIT") {
+    //Don't delete the installedOnEdit or do_daily_sync trigger
+    if (triggers[i].getHandlerFunction() != "do_daily_sync" && (triggers[i].getHandlerFunction() != "installedOnEdit" || triggers[i].getEventType() != "ON_EDIT")) {
       ScriptApp.deleteTrigger(triggers[i]);
     }
   }
   log_this("Turned off repeating process (trigger) that performs one time loading of people.");
+}
+
+function daily_sync_off() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    //Don't delete the installedOnEdit tritter
+    if (triggers[i].getHandlerFunction() == "do_daily_sync") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  log_this("Daily Sync Turned Off.");
 }
 
 function get_people_to_update() {
