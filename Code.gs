@@ -78,6 +78,7 @@ function addEditTrigger() {
       return;
     }
   }
+  Logger.log("Adding installedOnEdit trigger to make checkbox work");
   ScriptApp.newTrigger('installedOnEdit')
   .forSpreadsheet(SpreadsheetApp.getActive())
   .onEdit()
@@ -85,7 +86,6 @@ function addEditTrigger() {
 }
 
 function toggle() {
-  Logger.log("Adding installedOnEdit trigger to make checkbox work")
   addEditTrigger()
   Logger.log("Toggling Running status");
   if (!config_sheet.getRange(config.is_running).getValue()) {
