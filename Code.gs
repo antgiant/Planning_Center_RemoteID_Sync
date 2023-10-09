@@ -1,3 +1,5 @@
+var scriptProperties = PropertiesService.getScriptProperties();
+
 var config = {
   api_version: "2023-02-15",
   username: "B2",
@@ -8,8 +10,8 @@ var config = {
   left_to_create: "B9"
 }
 var config_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configuration");
-var username = config_sheet.getRange(config.username).getValue();
-var password = config_sheet.getRange(config.password).getValue();
+var username = scriptProperties.getProperty('username');
+var password = scriptProperties.getProperty('password');
 Logger.log("Script Loaded and Config Values Set");
 
 function log_this(message) {
@@ -25,7 +27,21 @@ function update_config() {
   Logger.log("Updating Config");
   username = config_sheet.getRange(config.username).getValue();
   password = config_sheet.getRange(config.password).getValue();
-  log_this("Config Values Updated (username:"+username.replace(/([a-z0-9])/gi,"*")+", password:"+password.replace(/([a-z0-9])/gi,"*")+")");
+
+  if (username.replace(/([*])/gi,"") != "") { //Don't overwrite with redacted version
+    scriptProperties.setProperty('username', username);
+    log_this("Username updated");
+    config_sheet.getRange(config.username).setValue(username.replace(/([a-z0-9])/gi,"*"));
+  } else {
+    username = scriptProperties.getProperty('username');
+  }
+  if (password.replace(/([*])/gi,"") != "") { //Don't overwrite with redacted version
+    scriptProperties.setProperty('password', password);
+    log_this("Password updated");
+    config_sheet.getRange(config.password).setValue(password.replace(/([a-z0-9])/gi,"*"));
+  } else {
+    password = scriptProperties.getProperty('password');
+  }
 }
 
 function update_running_status(is_running) {
@@ -91,8 +107,8 @@ function toggle() {
   addEditTrigger()
   Logger.log("Toggling Running status");
   if (!config_sheet.getRange(config.is_running).getValue()) {
-    if (config_sheet.getRange(config.username).getValue().toString().length == 64
-      && config_sheet.getRange(config.password).getValue().toString().length == 64) {
+    if (username.length == 64
+      && password.length == 64) {
         log_this("Turning on Sync");
         update_running_status(true);
         SpreadsheetApp.getActive().toast('One Time Sync turned on');
