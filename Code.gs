@@ -172,6 +172,7 @@ function get_people_to_update() {
     },
     'muteHttpExceptions': true
   };
+  var total = 0;
   do {
     var now = new Date();
     var temp_url = "https://api.planningcenteronline.com/people/v2/people?order=created_at&per_page=10&where[remote_id]=&filter[ne]=organization_admins"
@@ -185,13 +186,14 @@ function get_people_to_update() {
       if (typeof headers["Retry-After"] === 'undefined') {
         Logger.log("No API delay requested by Planning Center loading data from JSON");
         var object = JSON.parse(jsondata.getContentText());
+        total = object.meta.total_count;
 
-        log_this("Processing Batch of "+object.data.length+" people with "+object.meta.total_count+" people remaining.");
+        log_this("Processing Batch of "+object.data.length+" people with "+total+" people remaining.");
         config_sheet.getRange(config.last_check_time).setValue(now.toLocaleString());
-        config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count);
+        config_sheet.getRange(config.left_to_create).setValue(total);
         created_total = update_people(object.data, created_total);
         config_sheet.getRange(config.total_created).setValue(created_total);
-        config_sheet.getRange(config.left_to_create).setValue(object.meta.total_count - object.data.length);
+        config_sheet.getRange(config.left_to_create).setValue(total - object.data.length);
         log_this("Batch Complete")
       } else {
         log_this("Planning Center API Limit reached. Delaying for "+headers["Retry-After"]+" seconds as requested by Planning Center API.");
@@ -204,7 +206,7 @@ function get_people_to_update() {
     } catch (e) {
       log_this(e.toString());
     }
-  } while (object.meta.total_count > 0)
+  } while (total > 0)
   //When complete turn off triggers
   update_running_status(false);
 }
