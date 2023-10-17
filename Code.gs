@@ -275,6 +275,7 @@ function update_people(data, current_count) {
 }
 
 function doPost(e) {
-  log_this("Planning Center Webhook Called.");
+  log_this("Planning Center (Post) Webhook Called.");
+  update_config();
   get_people_to_update();
 }
